@@ -118,6 +118,11 @@ internal fun EditorScreen(
                     ) { Text("Открыть экран экзамена") }
                 }
             }
+            if (editorState.hasUnsavedChanges) {
+                item {
+                    Text("Изменения не сохранены. Чтобы сохранять попытки для этого текста, нажмите «Обновить стих».")
+                }
+            }
             item {
                 TrainingModeCard(editorState.trainingMode, onModeSelected)
             }

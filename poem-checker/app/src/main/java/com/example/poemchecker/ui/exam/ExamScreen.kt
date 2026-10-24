@@ -74,7 +74,7 @@ internal fun ExamScreen(
                     }
                 }
             }
-            if (attempts.isNotEmpty()) {
+            if (state.result != null && attempts.isNotEmpty()) {
                 item { AttemptsCard(attempts) }
             }
         }

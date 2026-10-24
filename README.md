@@ -7,7 +7,7 @@ The Android project lives in [`poem-checker/`](poem-checker/). It is a single-mo
 ## Current learning flow
 
 1. Type or paste a poem, preserving line breaks, or dictate one line at a time.
-2. Save it to retain progress and attempts across app restarts. Unsaved poems can also be practised, but their attempts are not stored.
+2. Save it to retain progress and attempts across app restarts. Unsaved poems and unsaved edits can also be practised, but their attempts are not stored. Press “Update poem” after editing to attach future attempts to the updated saved text.
 3. Choose hints: first word, last word, both ends of each line, or no hints. All four modes are currently available immediately.
 4. Start training and grant microphone access. Recognized words appear as colored cards; unspoken hint words stay visible in blue. Other unspoken words are hidden while listening and revealed afterward.
 5. Stop manually or let training stop when its comparison considers the poem complete. Scores of at least 85% mark the first-word or last-word stage as passed. The app can then advance the selected mode.
@@ -28,7 +28,7 @@ cd poem-checker
 ./gradlew :app:testDebugUnitTest
 ```
 
-The debug APK normally appears at `app/build/outputs/apk/debug/app-debug.apk`, relative to the Android project. The refactor was validated with JDK 17: debug build, lint with no errors, 40 JVM tests, and eight Android 14 emulator tests passed. Actual microphone recognition still needs device/provider checks.
+The debug APK normally appears at `app/build/outputs/apk/debug/app-debug.apk`, relative to the Android project. The refactor was validated with JDK 17: debug build, lint with no errors, 47 JVM tests, and nine Android 14 emulator tests passed. Actual microphone recognition still needs device/provider checks.
 
 | Setting | Checked-in value |
 | --- | --- |

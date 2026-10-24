@@ -26,6 +26,9 @@ Read current source and `git diff` before editing. Preserve user changes. Keep a
 - Comparison uses normalized exact word matches after edit-distance alignment. Extras have no direct score penalty; existing normalization makes both `ё/е` and `й/и` equivalent.
 - Completion uses the full alignment, independent of presentation limits. Hide unspoken non-hint words while listening.
 - Keep the immutable attempted mode/reference/poem ID when finishing. Reject callbacks/comparison results from older sessions and input revisions.
+- A session may carry a saved poem ID only when its draft matches the saved text, ignoring outer whitespace. Edited drafts practise with a null poem ID until explicitly updated; keep their results separate from saved progress. Changing/reverting text must discard results from the previous draft.
+- Queue returned dictation during loading/saving, restore the queue through SavedStateHandle, and append it afterward without swallowing operation errors.
+- Exam history/previews must stay hidden until a completed exam result exists and disappear on restart/cancellation.
 - Only attempts for saved poems are persisted. Display the latest 20 records without assuming older rows are pruned.
 - Back, backgrounding, and disposal cancel capture without saving an incomplete attempt. Resuming must not automatically restart the microphone.
 

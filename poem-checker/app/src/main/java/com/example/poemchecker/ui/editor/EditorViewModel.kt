@@ -14,14 +14,21 @@ import kotlinx.coroutines.launch
 data class EditorUiState(
     val poemText: String = "",
     val currentPoemId: Long? = null,
+    val savedPoemText: String? = null,
     val trainingMode: TrainingMode = TrainingMode.FIRST_WORDS,
     val trainingProgress: TrainingProgress = TrainingProgress(),
+    val savedProgress: TrainingProgress = TrainingProgress(),
     val recognizedText: String = "",
     val comparison: ComparisonResult? = null,
     val isDictatingLine: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null
-)
+) {
+    val hasUnsavedChanges: Boolean
+        get() = currentPoemId != null && poemText.trim() != savedPoemText
+    val recitationPoemId: Long?
+        get() = currentPoemId.takeUnless { hasUnsavedChanges }
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EditorViewModel(
@@ -43,10 +50,25 @@ class EditorViewModel(
                 repository.getPoem(id)?.let { applyPoem(it) }
             }
         }
+        if (!_state.value.isSaving) drainPendingDictation()
     }
 
     fun updatePoem(text: String) {
-        if (!_state.value.isSaving) _state.value = _state.value.copy(poemText = text, error = null)
+        if (!_state.value.isSaving) {
+            setDraftText(text)
+            _state.value = _state.value.copy(error = null)
+        }
+    }
+
+    private fun setDraftText(text: String) {
+        val old = _state.value
+        val changed = old.poemText.trim() != text.trim()
+        _state.value = old.copy(
+            poemText = text,
+            trainingProgress = if (changed) old.savedProgress else old.trainingProgress,
+            recognizedText = if (changed) "" else old.recognizedText,
+            comparison = if (changed) null else old.comparison
+        )
     }
 
     fun setDictatingLine(value: Boolean) { _state.value = _state.value.copy(isDictatingLine = value) }
@@ -54,11 +76,25 @@ class EditorViewModel(
     fun showError(message: String) { _state.value = _state.value.copy(error = message, isDictatingLine = false) }
 
     fun appendRecognizedLine(text: String) {
-        if (text.isNotBlank() && !_state.value.isSaving) {
-            val old = _state.value.poemText
-            updatePoem(if (old.isBlank()) text else "$old\n$text")
+        if (text.isNotBlank()) {
+            if (_state.value.isSaving) {
+                val pending = savedState.get<ArrayList<String>>("pendingDictation").orEmpty()
+                savedState["pendingDictation"] = ArrayList(pending + text)
+            } else {
+                appendLine(text)
+            }
         }
         setDictatingLine(false)
+    }
+
+    private fun appendLine(text: String) {
+        val old = _state.value.poemText
+        setDraftText(if (old.isBlank()) text else "$old\n$text")
+    }
+
+    private fun drainPendingDictation() {
+        val pending = savedState.remove<ArrayList<String>>("pendingDictation").orEmpty()
+        pending.forEach(::appendLine)
     }
 
     fun saveCurrentPoem() {
@@ -72,7 +108,11 @@ class EditorViewModel(
                 progress = snapshot.trainingProgress
             ))
             savedState["poemId"] = id
-            _state.value = _state.value.copy(currentPoemId = id)
+            _state.value = _state.value.copy(
+                currentPoemId = id,
+                savedPoemText = snapshot.poemText.trim(),
+                savedProgress = snapshot.trainingProgress
+            )
         }
     }
 
@@ -85,18 +125,21 @@ class EditorViewModel(
         _state.value = EditorUiState(
             poemText = poem.text,
             currentPoemId = poem.id,
+            savedPoemText = poem.text.trim(),
             trainingMode = when {
                 poem.progress.finalPassed || poem.progress.lastWordsPassed -> TrainingMode.NO_HINTS
                 poem.progress.firstWordsPassed -> TrainingMode.LAST_WORDS
                 else -> TrainingMode.FIRST_WORDS
             },
-            trainingProgress = poem.progress
+            trainingProgress = poem.progress,
+            savedProgress = poem.progress
         )
     }
 
     fun clearPoem() {
         if (_state.value.isSaving) return
         savedState.remove<Long>("poemId")
+        savedState.remove<ArrayList<String>>("pendingDictation")
         _state.value = EditorUiState()
     }
 
@@ -113,9 +156,10 @@ class EditorViewModel(
     }
 
     fun acceptResult(result: RecitationResult) {
-        if (_state.value.currentPoemId != result.session.poemId || _state.value.poemText != result.session.referenceText) return
+        if (_state.value.recitationPoemId != result.session.poemId || _state.value.poemText != result.session.referenceText) return
         _state.value = _state.value.copy(
             trainingProgress = result.update.progress,
+            savedProgress = if (result.session.poemId != null) result.update.progress else _state.value.savedProgress,
             trainingMode = result.update.nextMode,
             recognizedText = result.recognizedText,
             comparison = result.comparison
@@ -131,6 +175,7 @@ class EditorViewModel(
             showError("Не удалось сохранить или загрузить стих. Попробуйте ещё раз.")
         } finally {
             _state.value = _state.value.copy(isSaving = false)
+            drainPendingDictation()
         }
     }
 }

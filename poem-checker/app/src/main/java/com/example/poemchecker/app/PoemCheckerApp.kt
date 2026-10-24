@@ -108,7 +108,7 @@ fun PoemCheckerApp(container: AppContainer) {
     }
     val openSession: (SessionKind) -> Unit = { kind ->
         val state = editor.state.value
-        if (!state.isSaving && recitation.open(state.currentPoemId, state.poemText, state.trainingMode, kind, state.trainingProgress)) {
+        if (!state.isSaving && recitation.open(state.recitationPoemId, state.poemText, state.trainingMode, kind, state.trainingProgress)) {
             screen = if (kind == SessionKind.EXAM) Screen.EXAM else Screen.TRAINING
             if (kind == SessionKind.TRAINING) {
                 if (hasMicrophonePermission()) recitation.startListening() else {

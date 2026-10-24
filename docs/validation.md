@@ -35,13 +35,13 @@ Replace the serial with the value shown by `adb devices`. Instrumentation report
 On 2026-10-24, the final refactor passed:
 
 - Debug APK build and Android test APK compilation with JDK 17.
-- 40 JVM tests, including normalization/alignment, thresholds, hints, fake-repository editor operations, stale-session rejection, duplicate-finish prevention, save retry, and fake-engine speech cleanup.
-- Eight Android 14 emulator tests: five Room tests and three Compose/navigation tests.
+- 47 JVM tests, including normalization/alignment, thresholds, hints, fake-repository editor operations, stale-session rejection, duplicate-finish prevention, save retry, and fake-engine speech cleanup.
+- Nine Android 14 emulator tests: five Room tests and four Compose/navigation tests.
 - Lint with zero errors. Remaining warnings concern older target/dependency versions.
 
 Room tests cover transactional rollback after a failed attempt insert, atomic deletion, latest-20 queries without pruning, reopening storage, and opening the original version-1 schema with saved text/progress/attempts. The exported schema identity also matches the pre-refactor generated database.
 
-Compose tests cover hiding unspoken non-hint words, hiding incomplete exam results, and returning from an exam to the same draft with system Back. Real-provider microphone behavior was not validated by these automated tests.
+Compose tests cover hiding unspoken non-hint words, hiding incomplete exam results, and returning from an exam to the same draft with system Back. A populated-history test also verifies previews remain hidden before/during an exam, during cancellation/errors/saving, and after restart, and become visible only after completion. Editor regression tests cover edited-draft isolation, reverting drafts, delayed restoration, queued dictation during saving, saved-state queue restoration, and preserving lines/errors after a failed load. Real-provider microphone behavior was not validated by these automated tests.
 
 ## Manual speech and lifecycle checks
 
@@ -57,6 +57,7 @@ Use a Russian-capable recognition provider and preserve reference line breaks. S
 | Exam | Start and stop manually; no reference hints or partial result should be labeled as a completed exam |
 | Navigation | Leave training/exam using toolbar or system Back while listening; microphone activity should stop without creating an attempt |
 | Background/rotation | Background or rotate during capture; capture should stop and require an explicit restart. A save already in progress should complete or roll back atomically |
+| Draft edits | Save a poem, edit its text and practise without updating: the stored text/progress must remain unchanged. Update it explicitly, then verify future attempts persist. Reverting a practised draft must restore the original saved progress |
 | Persistence | Save, practice, reload and restart; progress/attempts should remain. Clear should reset only the session; delete should remove the poem and its attempts |
 
 Unsaved drafts are not durably restored after process death. No-hint practice still grants learned status, and edits still retain previous progress. These are documented product rules/limitations rather than regressions.

@@ -31,13 +31,13 @@ Compose routes collect ViewModel state with `collectAsStateWithLifecycle` and pa
 
 The editor is the hub for two sibling destinations. A small saved route enum and `BackHandler` provide navigation; toolbar Back and Android system Back use the same cleanup action. A navigation library is not currently needed for this three-screen flow.
 
-Opening a session captures a new ID, poem ID, reference text, mode, and kind. Empty tokenized references are rejected. Starting a fresh attempt clears the previous transcript, comparison, and completed result. Exam mode always uses `NO_HINTS` and only shows a completed exam result after manual finish.
+Opening a session captures a new ID, poem ID, reference text, mode, and kind. Empty tokenized references are rejected. Starting a fresh attempt clears the previous transcript, comparison, and completed result. Exam mode always uses `NO_HINTS` and only shows a completed exam result after manual finish. Previous attempt history, including recognized-text previews, stays hidden until an exam is completed and is hidden again on restart or cancellation.
 
 Recognition callbacks carry the session ID. Comparison runs on an injected computation dispatcher, and the ViewModel accepts results only for the latest session/input revision. Cancelling a comparison job does not guarantee the CPU loop stops immediately; revision checks prevent stale output from changing the active UI.
 
 Finishing freezes the session and transcript, computes the final score, applies progress rules, and saves through one repository operation. While saving, repeated finishes and navigation to another session are blocked. Failed saves expose a retry action and retain the original attempt mode. Completion updates the editor's progress and next selected mode.
 
-Leaving or backgrounding cancels microphone capture without recording a completed attempt. Returning does not automatically restart capture. `onCleared` and composition disposal also release capture. Small saved-poem references use `SavedStateHandle`; a saved poem can reload after process death, while an unsaved draft and active recitation are not durably restored.
+Leaving or backgrounding cancels microphone capture without recording a completed attempt. Returning does not automatically restart capture. `onCleared` and composition disposal also release capture. Small saved-poem references use `SavedStateHandle`; a saved poem can reload after process death, while an unsaved draft and active recitation are not durably restored. Dictation results arriving during loading or saving are queued in `SavedStateHandle` and appended in order afterward. A failed load/save still retains the returned lines and its error message.
 
 ## Learning rules
 
@@ -75,7 +75,7 @@ Room still opens `poem_checker_v9.db`, version 1, under application ID `com.exam
 
 Titles use the trimmed text's first line, at most 40 characters, with a Russian untitled fallback. Saving an edited poem retains progress. Clearing the editor does not delete saved poems.
 
-Only saved poems persist attempts. Recording an attempt and updating progress share a Room transaction; deleting a poem and its attempts also shares a transaction. Attempt recording changes progress without overwriting poem text. A forced-insert-failure test verifies that progress is rolled back with the failed attempt.
+Only saved poems whose current draft matches the saved text persist attempts (outer whitespace is ignored). The editor tracks the saved text and saved progress separately. Unsaved edits use a null session poem ID and keep practice results in memory until an explicit save; they cannot update the older database text’s progress. Changing the reference text clears its transient comparison/results and starts from the last saved progress, so reverting a draft cannot transfer its practice results to the original poem. The existing policy of retaining previously saved progress on explicit edits remains unchanged. Recording an attempt and updating progress share a Room transaction; deleting a poem and its attempts also shares a transaction. Attempt recording changes progress without overwriting poem text. A forced-insert-failure test verifies that progress is rolled back with the failed attempt.
 
 History keeps the latest 20 percentages chronologically. Attempt queries show the latest 20 rows newest first without pruning older rows. Best score includes every mode. Database mode strings still do not distinguish no-hint training from exams; explicit kind currently belongs to session state only. There are no foreign keys or additional indices; adopting them needs a separate versioned migration.
 
