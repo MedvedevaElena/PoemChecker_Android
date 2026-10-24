@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "PoemCheckerV9"
+rootProject.name = "PoemChecker"
 include(":app")
