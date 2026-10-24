@@ -1,6 +1,15 @@
 # Architecture improvement plan
 
-Proposed on 2026-10-24 after reviewing the current source and Android's architecture guidance. This is a staged proposal; only the project folder rename has been implemented in this change.
+Approved and implemented on 2026-10-24. The proposal below records the original rationale and stages. See [architecture.md](architecture.md) for the actual current implementation.
+
+## Implementation status
+
+- Stages 1–2: build baseline established, comparison/progress/hint tests added, repository injected, Room separated.
+- Stages 3–5: pure learning rules, immutable sessions, stale-result guards, replaceable speech client, lifecycle cleanup, separate editor/recitation state, and stateless screens implemented.
+- Stage 6: attempt/progress writes and deletion are transactional; schema version 1 is exported and legacy data compatibility is tested. Foreign keys, indices, and persisted session kind remain deferred because they require a schema migration.
+- Stage 7: one Linux GitHub Actions job builds, runs unit tests, and lints on code pushes/pull requests. Device tests run locally to keep CI small; no APK artifacts are uploaded.
+- Navigation uses the existing three-destination flow with explicit Back handling, rather than adding a navigation-library dependency. Theme remains the existing MaterialTheme.
+- Local validation: JDK 17 debug build, lint with no errors, 40 unit tests, and eight Android 14 emulator tests passed. Real-provider microphone checks remain manual.
 
 ## Recommended approach
 

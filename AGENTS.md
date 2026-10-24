@@ -1,44 +1,48 @@
 # Working in PoemsTeacher
 
-## Purpose and scope
+## Purpose and source map
 
-Help students learn poems by heart through guided spoken practice and comparison with a reference poem. The product currently targets Russian-speaking users on Android 9+.
+Help students learn poems by heart through spoken practice. The current product uses Russian UI and `ru-RU` recognition on Android 9+.
 
-Read `README.md`, `docs/architecture.md`, and `docs/validation.md` before changing behavior. The runnable project is `poem-checker/`, not the repository root. This file applies throughout the repository.
+Read `README.md`, `docs/architecture.md`, and `docs/validation.md` before changing behavior. The runnable Android project is `poem-checker/`. This file applies throughout the repository. `docs/architecture-plan.md` records the approved refactor and its implementation status.
 
-`docs/architecture-plan.md` describes proposed future work; its target packages and stages are not yet implemented.
+Kotlin packages under `app/src/main/java/com/example/poemchecker/`:
 
-## Source of truth
+- `app/`: dependency container, factories, routes, permission launchers, lifecycle and Back handling.
+- `domain/`: Android-independent models, comparator, hints, progress rules, completion operation, repository contract.
+- `data/`: Room entities/DAOs/database and transactional repository implementation.
+- `speech/`: recognition contract, testable segment controller, Android adapter.
+- `ui/`: editor and recitation ViewModels, stateless editor/training/exam screens, components, previews.
+- `MainActivity.kt`: Compose entry point only.
 
-- Nearly all application code is in `poem-checker/app/src/main/java/com/example/poemchecker/MainActivity.kt`: models, Room, repository, ViewModel, speech recognition, Compose screens, and comparator.
-- Build versions live in the root and app `build.gradle.kts` files inside `poem-checker/` and its `gradle/wrapper/gradle-wrapper.properties`.
-- Read current code and `git diff` before editing. Preserve existing user changes. Documentation describes the working tree and may include behavior that has not yet been committed.
-- Distinguish implemented behavior from intended improvements. The issue list in `docs/architecture.md` is an analysis, not authorization to fix everything.
+Read current source and `git diff` before editing. Preserve user changes. Keep architectural boundaries: the domain must not import Android, Compose, or Room; ViewModels receive dependencies rather than constructing databases; leaf screens receive state and callbacks.
 
-## Behavioral constraints
+## Behavior to preserve
 
-- Preserve poem line breaks: hints and live word grouping depend on them.
-- Keep Russian UI wording and `ru-RU` recognition unless the task explicitly changes localization.
-- All four training modes are freely selectable. Do not restore sequential locks based on old README descriptions or the remaining `*Unlocked` fields.
-- First/last-word pass threshold is 85%; no-hint pass threshold is 90%. Combined hints only update score history and best score.
-- No-hint training and the exam share a training mode and pass flag. A separate exam-only qualification would be a product behavior change.
-- Comparison currently uses normalized exact word matches after edit-distance alignment. Extra words have no direct score penalty. Changing normalization, alignment, or scoring requires explicit attention to changed learning outcomes.
-- Only attempts for saved poems are persisted. The UI shows the latest 20 attempt records, but older database records are not pruned.
-- The training screen hides unspoken non-hint words while listening. Preserve this when changing live rendering.
+- Preserve poem line breaks, Russian wording, and recognition language unless the task changes localization.
+- All four training modes are freely selectable. First/last-word passing threshold is 85%; no-hint is 90%. Combined hints only update history/best score.
+- Pass flags are sticky, but auto-advancement depends on the current attempt's score.
+- No-hint training and exam share qualification. Exam-only learned status is a product change.
+- Comparison uses normalized exact word matches after edit-distance alignment. Extras have no direct score penalty; existing normalization makes both `ё/е` and `й/и` equivalent.
+- Completion uses the full alignment, independent of presentation limits. Hide unspoken non-hint words while listening.
+- Keep the immutable attempted mode/reference/poem ID when finishing. Reject callbacks/comparison results from older sessions and input revisions.
+- Only attempts for saved poems are persisted. Display the latest 20 records without assuming older rows are pruned.
+- Back, backgrounding, and disposal cancel capture without saving an incomplete attempt. Resuming must not automatically restart the microphone.
 
 ## Implementation guidance
 
-- Keep changes focused. Splitting the large Kotlin file is a possible future refactor, not a prerequisite for every fix.
-- Follow the existing Compose, StateFlow, coroutine, and repository patterns. Account for asynchronous callbacks and state changes when saving attempts or progress.
-- Room database version is 1 with schema export disabled. Any schema change needs a deliberate version/migration strategy that preserves saved poems and attempts.
-- `TrainingMode.name` is stored in attempt rows. Renaming enum values changes stored identifiers; consider existing data.
-- Manage recognition lifecycle across starts, segment restarts, stops, navigation, and disposal. Do not assume silence always ends a student's recitation or that recognition runs offline.
-- Keep local SDK paths, build output, IDE state, credentials, and signing material out of version control. Do not commit generated artifacts or introduce dependency upgrades incidentally.
+- Keep one Gradle module unless concrete scale or build needs justify more. Prefer focused use cases and manual constructor injection over adding frameworks incidentally.
+- Route UI events to ViewModels, expose immutable StateFlow state, and collect it with lifecycle awareness.
+- Run alignment on the computation dispatcher. Android recognizer APIs and resource cleanup must run on the main thread. Cancelling a CPU coroutine alone is not a stale-result guard.
+- Attempt/progress saves and poem/attempt deletion must remain atomic. Report save errors through state and preserve retry data.
+- Database filename remains `poem_checker_v9.db`, version 1, despite the source folder rename. Preserve the application ID. Schema changes require a deliberate version/migration strategy, exported schemas, and compatibility tests; do not use destructive migration fallback.
+- Mode names are stored in rows. Renaming enum constants changes stored identifiers. Session kind is not yet persisted separately.
+- Do not commit SDK paths, build output, IDE state, credentials, or signing material. Avoid incidental dependency upgrades.
 
 ## Validation and reporting
 
-Run relevant checks from `poem-checker/` as described in `docs/validation.md`. There are currently no checked-in automated tests. Documentation-only work can be verified through source comparison, link checks, and `git diff --check`; an Android build is not required for prose-only edits.
+Run relevant commands from `poem-checker/`; see `docs/validation.md`. CI uses JDK 17 on a standard Linux runner to build, run JVM tests, and lint. Device tests exercise actual Room behavior and Compose/navigation on a local emulator. Speech-provider checks remain manual.
 
-For behavior changes, use the focused manual scenarios and add meaningful automated coverage when appropriate, particularly for comparison and progress transitions. Report exactly which checks ran and any environment blockers. Never describe unexecuted builds or device checks as passing.
+Add meaningful regression coverage for changes to comparison, progress, storage, or session lifecycle. Report exactly which checks ran and any blockers. Documentation-only changes need source/link checks and `git diff --check`, not an Android build.
 
-Update the documentation when changing training rules, scoring, persistence, speech lifecycle, architecture, or build setup.
+Update documentation when changing architecture, learning/scoring rules, persistence, speech lifecycle, build setup, or CI.

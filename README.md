@@ -17,7 +17,7 @@ The score is the percentage of original words matched after normalization and al
 
 ## Development
 
-Open `poem-checker/` in Android Studio. Configure an Android SDK containing platform 34 and set its location through Android Studio or an untracked `local.properties` file. Java/Kotlin compilation targets Java 17; use a JDK compatible with the checked-in Gradle and Android Gradle plugin versions.
+Open `poem-checker/` in Android Studio. Configure an Android SDK containing platform 34 and set its location through Android Studio or an untracked `local.properties` file. Use JDK 17 for Gradle, matching CI. Java/Kotlin compilation also targets Java 17. On macOS, select the installed JDK 17 in Android Studio’s Gradle settings.
 
 Commands from the repository root:
 
@@ -28,7 +28,7 @@ cd poem-checker
 ./gradlew :app:testDebugUnitTest
 ```
 
-The debug APK normally appears at `app/build/outputs/apk/debug/app-debug.apk`, relative to the Android project. These are development commands, not a claim that the current checkout builds. No automated test sources or CI configuration are checked in; the unit-test task alone does not establish behavioral coverage.
+The debug APK normally appears at `app/build/outputs/apk/debug/app-debug.apk`, relative to the Android project. The refactor was validated with JDK 17: debug build, lint with no errors, 40 JVM tests, and eight Android 14 emulator tests passed. Actual microphone recognition still needs device/provider checks.
 
 | Setting | Checked-in value |
 | --- | --- |
@@ -42,14 +42,20 @@ The debug APK normally appears at `app/build/outputs/apk/debug/app-debug.apk`, r
 | Compose compiler / BOM | 1.5.14 / 2024.09.00 |
 | Room | 2.6.1 |
 
-The wrapper/plugin combination needs build verification before being treated as a working toolchain. Do not silently upgrade dependencies as part of unrelated work.
+The checked-in toolchain has been exercised locally with JDK 17. Existing Gradle deprecation and dependency-age warnings remain; upgrades should be deliberate changes.
 
 Use a device or emulator with an installed Russian-capable speech recognition provider to exercise microphone flows. Offline availability depends on that provider; the app does not explicitly request on-device-only recognition. The app stores poem text, progress, timestamps, and short recognized-text previews locally. Android backup is enabled, and no exclusions are configured.
+
+## Continuous integration
+
+[Android checks](https://github.com/MedvedevaElena/PoemChecker_Android/actions/workflows/android.yml) runs on code pushes to `master`, pull requests, or manual dispatch. One standard Linux runner uses JDK 17 to build the debug app, run unit tests, and lint. Gradle dependencies are cached; no APK artifacts are uploaded. Documentation-only changes skip automatic runs.
+
+You can continue developing on macOS. Local Room and Compose/navigation tests run with `./gradlew :app:connectedDebugAndroidTest` against an emulator; they are not part of the Linux CI job. See [validation.md](docs/validation.md) for device selection and reports.
 
 ## Project documentation
 
 - [`AGENTS.md`](AGENTS.md): working instructions for coding assistants.
 - [`docs/architecture.md`](docs/architecture.md): source map, state, storage, comparison rules, and observed issues.
-- [`docs/architecture-plan.md`](docs/architecture-plan.md): proposed architecture and incremental refactoring stages.
+- [`docs/architecture-plan.md`](docs/architecture-plan.md): approved refactoring stages and implementation status.
 - [`docs/validation.md`](docs/validation.md): build checks and manual regression scenarios.
 - [`poem-checker/README.md`](poem-checker/README.md): short Russian overview.
