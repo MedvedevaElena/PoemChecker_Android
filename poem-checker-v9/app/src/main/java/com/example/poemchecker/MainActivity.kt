@@ -92,6 +92,7 @@ import kotlin.math.max
 enum class TrainingMode {
     FIRST_WORDS,
     LAST_WORDS,
+    FIRST_AND_LAST_WORDS,
     NO_HINTS
 }
 
@@ -200,9 +201,12 @@ private fun buildLiveLines(
     }
 
     val lineStarts = lineWordCounts.runningFold(0) { acc, count -> acc + count }
+    val firstWordIndices = lineStarts.dropLast(1).toSet()
+    val lastWordIndices = lineStarts.drop(1).map { it - 1 }.toSet()
     val hintIndices: Set<Int> = when (mode) {
-        TrainingMode.FIRST_WORDS -> lineStarts.dropLast(1).toSet()
-        TrainingMode.LAST_WORDS -> lineStarts.drop(1).map { it - 1 }.toSet()
+        TrainingMode.FIRST_WORDS -> firstWordIndices
+        TrainingMode.LAST_WORDS -> lastWordIndices
+        TrainingMode.FIRST_AND_LAST_WORDS -> firstWordIndices + lastWordIndices
         TrainingMode.NO_HINTS -> emptySet()
     }
 
@@ -418,6 +422,8 @@ class PoemCheckerViewModel(application: Application) : AndroidViewModel(applicat
                     bestScore = newBest
                 ) else progress.copy(history = newHistory, bestScore = newBest)
             }
+            // Free-practice mode, not part of the unlock chain — just track history/best score.
+            TrainingMode.FIRST_AND_LAST_WORDS -> progress.copy(history = newHistory, bestScore = newBest)
         }
     }
 
@@ -1053,6 +1059,7 @@ private fun TrainingScreen(
                         text = when (state.trainingMode) {
                             TrainingMode.FIRST_WORDS -> "Режим: первые слова"
                             TrainingMode.LAST_WORDS -> "Режим: последние слова"
+                            TrainingMode.FIRST_AND_LAST_WORDS -> "Режим: первые и последние слова"
                             TrainingMode.NO_HINTS -> "Режим: без подсказок"
                         }
                     )
@@ -1185,21 +1192,28 @@ private fun SavedPoemCard(poem: SavedPoem, onLoad: () -> Unit, onDelete: () -> U
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TrainingModeCard(selectedMode: TrainingMode, progress: TrainingProgress, onModeSelected: (TrainingMode) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Режимы тренировки", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 TrainingMode.values().forEach { mode ->
                     val label = when (mode) {
                         TrainingMode.FIRST_WORDS -> "Первые"
                         TrainingMode.LAST_WORDS -> "Последние"
+                        TrainingMode.FIRST_AND_LAST_WORDS -> "Первые+последние"
                         TrainingMode.NO_HINTS -> "Без подсказки"
                     }
                     val unlocked = when (mode) {
                         TrainingMode.FIRST_WORDS -> true
                         TrainingMode.LAST_WORDS -> progress.lastWordsUnlocked
+                        TrainingMode.FIRST_AND_LAST_WORDS -> true
                         TrainingMode.NO_HINTS -> progress.noHintsUnlocked
                     }
                     AssistChip(onClick = { if (unlocked) onModeSelected(mode) }, label = { Text(if (unlocked) label else "$label 🔒") })
@@ -1209,6 +1223,7 @@ private fun TrainingModeCard(selectedMode: TrainingMode, progress: TrainingProgr
                 when (selectedMode) {
                     TrainingMode.FIRST_WORDS -> "Сейчас видны только первые слова строк."
                     TrainingMode.LAST_WORDS -> "Сейчас видны только последние слова строк."
+                    TrainingMode.FIRST_AND_LAST_WORDS -> "Сейчас видны первые и последние слова строк."
                     TrainingMode.NO_HINTS -> "Подсказки отключены. Можно тренироваться или сдавать экзамен."
                 }
             )
@@ -1260,6 +1275,7 @@ private fun HintCard(mode: TrainingMode, hints: List<String>) {
                 when (mode) {
                     TrainingMode.FIRST_WORDS -> "Подсказка: первые слова"
                     TrainingMode.LAST_WORDS -> "Подсказка: последние слова"
+                    TrainingMode.FIRST_AND_LAST_WORDS -> "Подсказка: первые и последние слова"
                     TrainingMode.NO_HINTS -> "Подсказки отключены"
                 },
                 style = MaterialTheme.typography.titleMedium,
@@ -1277,6 +1293,11 @@ private fun buildHints(poemText: String, mode: TrainingMode): List<String> {
         when (mode) {
             TrainingMode.FIRST_WORDS -> words.firstOrNull().orEmpty()
             TrainingMode.LAST_WORDS -> words.lastOrNull().orEmpty()
+            TrainingMode.FIRST_AND_LAST_WORDS -> {
+                val first = words.firstOrNull().orEmpty()
+                val last = words.lastOrNull().orEmpty()
+                if (words.size > 1) "$first … $last" else first
+            }
             TrainingMode.NO_HINTS -> ""
         }
     }
