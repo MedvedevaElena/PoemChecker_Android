@@ -2,7 +2,7 @@
 
 ## Build checks
 
-From `poem-checker-v9/`:
+From `poem-checker/`:
 
 ```sh
 ./gradlew :app:assembleDebug

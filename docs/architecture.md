@@ -1,10 +1,10 @@
 # Architecture and behavior
 
-This analysis describes the working tree reviewed on 2026-10-24, including the existing uncommitted combined-hint mode. It is based on source inspection; an Android build and device session were not run for this documentation change.
+This analysis describes the source reviewed on 2026-10-24, including the combined-hint mode. Paths reflect the subsequent project folder rename to `poem-checker/`. It is based on source inspection; an Android build and device session were not run for this documentation change. The proposed refactoring is described separately in [architecture-plan.md](architecture-plan.md).
 
 ## Source map
 
-All Kotlin symbols below currently live in [`MainActivity.kt`](../poem-checker-v9/app/src/main/java/com/example/poemchecker/MainActivity.kt).
+All Kotlin symbols below currently live in [`MainActivity.kt`](../poem-checker/app/src/main/java/com/example/poemchecker/MainActivity.kt).
 
 | Area | Main symbols | Responsibility |
 | --- | --- | --- |

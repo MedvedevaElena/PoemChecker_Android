@@ -4,12 +4,14 @@
 
 Help students learn poems by heart through guided spoken practice and comparison with a reference poem. The product currently targets Russian-speaking users on Android 9+.
 
-Read `README.md`, `docs/architecture.md`, and `docs/validation.md` before changing behavior. The runnable project is `poem-checker-v9/`, not the repository root. This file applies throughout the repository.
+Read `README.md`, `docs/architecture.md`, and `docs/validation.md` before changing behavior. The runnable project is `poem-checker/`, not the repository root. This file applies throughout the repository.
+
+`docs/architecture-plan.md` describes proposed future work; its target packages and stages are not yet implemented.
 
 ## Source of truth
 
-- Nearly all application code is in `poem-checker-v9/app/src/main/java/com/example/poemchecker/MainActivity.kt`: models, Room, repository, ViewModel, speech recognition, Compose screens, and comparator.
-- Build versions live in the root and app `build.gradle.kts` files inside `poem-checker-v9/` and its `gradle/wrapper/gradle-wrapper.properties`.
+- Nearly all application code is in `poem-checker/app/src/main/java/com/example/poemchecker/MainActivity.kt`: models, Room, repository, ViewModel, speech recognition, Compose screens, and comparator.
+- Build versions live in the root and app `build.gradle.kts` files inside `poem-checker/` and its `gradle/wrapper/gradle-wrapper.properties`.
 - Read current code and `git diff` before editing. Preserve existing user changes. Documentation describes the working tree and may include behavior that has not yet been committed.
 - Distinguish implemented behavior from intended improvements. The issue list in `docs/architecture.md` is an analysis, not authorization to fix everything.
 
@@ -35,7 +37,7 @@ Read `README.md`, `docs/architecture.md`, and `docs/validation.md` before changi
 
 ## Validation and reporting
 
-Run relevant checks from `poem-checker-v9/` as described in `docs/validation.md`. There are currently no checked-in automated tests. Documentation-only work can be verified through source comparison, link checks, and `git diff --check`; an Android build is not required for prose-only edits.
+Run relevant checks from `poem-checker/` as described in `docs/validation.md`. There are currently no checked-in automated tests. Documentation-only work can be verified through source comparison, link checks, and `git diff --check`; an Android build is not required for prose-only edits.
 
 For behavior changes, use the focused manual scenarios and add meaningful automated coverage when appropriate, particularly for comparison and progress transitions. Report exactly which checks ran and any environment blockers. Never describe unexecuted builds or device checks as passing.
 

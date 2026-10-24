@@ -2,7 +2,7 @@
 
 An Android app that helps students learn poems by heart: enter a poem, practise reciting it with word hints, and compare speech recognition results with the original text. The current interface and speech recognition language are Russian.
 
-The Android project lives in [`poem-checker-v9/`](poem-checker-v9/). It is a single-module Kotlin app using Jetpack Compose, Android speech recognition, and a local Room database. There is no application backend in this repository.
+The Android project lives in [`poem-checker/`](poem-checker/). It is a single-module Kotlin app using Jetpack Compose, Android speech recognition, and a local Room database. There is no application backend in this repository.
 
 ## Current learning flow
 
@@ -17,12 +17,12 @@ The score is the percentage of original words matched after normalization and al
 
 ## Development
 
-Open `poem-checker-v9/` in Android Studio. Configure an Android SDK containing platform 34 and set its location through Android Studio or an untracked `local.properties` file. Java/Kotlin compilation targets Java 17; use a JDK compatible with the checked-in Gradle and Android Gradle plugin versions.
+Open `poem-checker/` in Android Studio. Configure an Android SDK containing platform 34 and set its location through Android Studio or an untracked `local.properties` file. Java/Kotlin compilation targets Java 17; use a JDK compatible with the checked-in Gradle and Android Gradle plugin versions.
 
 Commands from the repository root:
 
 ```sh
-cd poem-checker-v9
+cd poem-checker
 ./gradlew :app:assembleDebug
 ./gradlew :app:lintDebug
 ./gradlew :app:testDebugUnitTest
@@ -50,5 +50,6 @@ Use a device or emulator with an installed Russian-capable speech recognition pr
 
 - [`AGENTS.md`](AGENTS.md): working instructions for coding assistants.
 - [`docs/architecture.md`](docs/architecture.md): source map, state, storage, comparison rules, and observed issues.
+- [`docs/architecture-plan.md`](docs/architecture-plan.md): proposed architecture and incremental refactoring stages.
 - [`docs/validation.md`](docs/validation.md): build checks and manual regression scenarios.
-- [`poem-checker-v9/README.md`](poem-checker-v9/README.md): short Russian overview.
+- [`poem-checker/README.md`](poem-checker/README.md): short Russian overview.
